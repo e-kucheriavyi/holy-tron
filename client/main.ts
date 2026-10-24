@@ -15,6 +15,7 @@ window.addEventListener("resize", resize)
 const isMock = false
 
 const endpoint = "wss://tron.larana.tech/ws"
+// const endpoint = "ws://gate3.hardshard.ru/ws"
 const nickname = "hlebaev"
 const mode: Mode = "full"
 
@@ -27,7 +28,7 @@ const connection = isMock ? createMockConnection() : createConnection({
 })
 
 connection.onMessage((msg: ServerMessage) => {
-	// store.tick()
+	// store.tick() // uncomment if mode === "ticks"
 	store.handle(msg)
 	draw(store.state)
 })

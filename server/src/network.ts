@@ -10,6 +10,7 @@ import {
 } from "./types.ts"
 
 export const createServer = (game: Game) => {
+	const spectators: WebSocket[] = []
 	const clientsById: Record<number, Client> = {}
 
 	const wss = new WebSocketServer({ port: 2026 })
@@ -46,6 +47,28 @@ export const createServer = (game: Game) => {
 				return
 			}
 			client.ws.send(tickString)
+		})
+
+		const stateString = JSON.stringify({
+			t: Date.now(),
+			i: game.state.ticks.length - 1,
+			a: [
+				{
+					t: ActionType.DATA,
+					d: {
+						...game.state,
+						players,
+						ticks: undefined,
+						playerId: -1,
+					},
+				},
+			],
+		})
+
+		spectators.forEach((s) => {
+			if (s.readyState === WebSocket.OPEN) {
+				s.send(stateString)
+			}
 		})
 	}
 
@@ -89,7 +112,9 @@ export const createServer = (game: Game) => {
 						ws,
 						mode: mode === "f" ? "full" : "ticks",
 					}
+					return
 				}
+				spectators.push(ws)
 				return
 			}
 

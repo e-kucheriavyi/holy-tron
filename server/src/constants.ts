@@ -2,7 +2,7 @@ export const CELLS_PER_PLAYER = 10
 
 export const PHASE_INTERVAL = 5000
 
-export const TICK_INTERVAL = 200
+export const TICK_INTERVAL = 100
 
 export const DEBUG = true
 

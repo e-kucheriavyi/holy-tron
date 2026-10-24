@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 	<head>
 		<title>Play TRON | larana.tech</title>
+		<meta charset="UTF-8" />
 <style>
 	body {
 		background: #000;
@@ -18,10 +19,47 @@
 		width: min(100vw, 100vh);
 		height: min(100vw, 100vh);
 	}
+
+	.controls {
+		display: grid;
+		grid-template-columns: repeat(3, 64px);
+		grid-template-rows: repeat(3, 64px);
+		gap: 6px;
+		padding: 6px;
+ 		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 100;
+		justify-content: center;
+	}
+
+	.controls button {
+		border: 0;
+		border-radius: 10px;
+		background: #444;
+		color: white;
+		font: 28px sans-serif;
+		cursor: pointer;
+	}
+
+	.controls button:hover {
+		background: #1d4ed8;
+	}
+
+	#up { grid-area: 1 / 2; }
+	#left { grid-area: 2 / 1; }
+	#right { grid-area: 2 / 3; }
+	#down { grid-area: 3 / 2; }
 </style>
 	</head>
 	<body>
 		<canvas id="canvas"></canvas>
+		<div class="controls" aria-label="Direction controls">
+			<button type="button" id="up" aria-label="Up">↑</button>
+			<button type="button" id="left" aria-label="Left">←</button>
+			<button type="button" id="down" aria-label="Down">↓</button>
+			<button type="button" id="right" aria-label="Right">→</button>
+		</div>
 		<script src="./src/index.ts" type="module"></script>
 	</body>
 </html>
