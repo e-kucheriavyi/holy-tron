@@ -1,4 +1,4 @@
-export type Mode = "full" | "tick"
+export type Mode = "full" | "ticks"
 
 export const Phase = {
 	PENDING: "p",

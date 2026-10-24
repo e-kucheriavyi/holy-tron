@@ -1,27 +1,56 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>Tron</title>
-<style>
-	body {
-		background: #000;
-		width: 100dvw;
-		height: 100dvh;
-		overflow: hidden;
-		margin: 0;
-		display: grid;
-		place-items: center;
-	}
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090c10" />
+    <meta name="description" content="Holy TRON — неоновая арена. Оставляй световой след, отсекай соперников и останься последним." />
+    <title>HOLY TRON — Enter the grid</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23090c10'/%3E%3Cpath d='M12 17h40v9H37v24H27V26H12z' fill='%237cf9df'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="header">
+        <a class="brand" href="./" aria-label="Holy Tron, главная"><span class="brand-icon">⌁</span><span>HOLY<span class="brand-light">TRON</span><small>LIGHT CYCLE ARENA</small></span></a>
+        <nav class="top-nav" aria-label="Навигация"><span class="nav-active">Арена</span><button id="help-button" class="nav-button">Как играть <span>↗</span></button></nav>
+        <div class="header-tag"><span class="status-dot"></span> SYSTEM ONLINE <span class="version">v.01</span></div>
+      </header>
 
-	canvas {
-		display: block;
-		width: min(100vw, 100vh);
-		height: min(100vw, 100vh);
-	}
-</style>
-	</head>
-	<body>
-		<canvas id="canvas"></canvas>
-		<script src="/main.ts" type="module"></script>
-	</body>
+      <main>
+        <section class="intro">
+          <div><div class="eyebrow"><span></span> THE GRID IS WAITING</div><h1>Оставь свой <em>след.</em></h1><p>Скорость. Стратегия. Один выживший.</p></div>
+          <div class="intro-coordinate">50° 06′ N &nbsp; / &nbsp; 08° 40′ E<br><span>HOLY TRON / DIGITAL FRONTIER</span></div>
+        </section>
+
+        <div class="game-layout">
+          <section class="arena-panel" aria-label="Игровая арена">
+            <div class="panel-bar"><div class="panel-title"><span class="small-cross">✳</span> THE ARENA <span class="room-chip" id="room-chip">TRAINING</span></div><div class="arena-status"><span class="status-dot" id="arena-dot"></span><span id="arena-status">ГОТОВА К ЗАПУСКУ</span></div></div>
+            <div class="arena-surface" id="arena-surface">
+              <canvas id="scene" hidden aria-label="Трёхмерная арена TRON. Потяни мышью, чтобы повернуть камеру."></canvas><canvas id="canvas" aria-label="Поле TRON. Управление стрелками или WASD."></canvas>
+              <div class="arena-corner corner-tl"></div><div class="arena-corner corner-tr"></div><div class="arena-corner corner-bl"></div><div class="arena-corner corner-br"></div>
+              <div class="arena-watermark">GRID // <span id="grid-size">51 × 51</span></div>
+              <div class="arena-overlay" id="arena-overlay">
+                <div class="overlay-inner"><div class="overlay-kicker" id="overlay-kicker">WELCOME TO THE GRID</div><h2 id="overlay-title">Право на <span>поворот.</span></h2><p id="overlay-description">Не врезайся в стены и световые следы.<br>Переживи всех. Забери арену.</p><button class="primary-button" id="start-button">Войти на арену <span>↗</span></button><div class="overlay-note" id="overlay-note">ТРЕНИРОВКА С 3 БОТАМИ · БЕЗ РЕГИСТРАЦИИ</div></div>
+              </div>
+              <div class="countdown" id="countdown" hidden aria-live="polite"></div>
+            </div>
+            <div class="arena-bottom"><span><span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span><span class="or">/</span><span class="keycap">↑</span><span class="keycap">←</span><span class="keycap">↓</span><span class="keycap">→</span><span class="control-caption">управление</span></span><div class="arena-actions"><div class="view-toggle" role="group" aria-label="Вид арены"><button id="view-2d" aria-pressed="true">2D</button><button id="view-3d" aria-pressed="false" disabled>3D</button></div><button class="text-button" id="sound-button" aria-pressed="false">♫ <span>Звук выкл.</span></button></div></div>
+          </section>
+
+          <aside class="sidebar">
+            <section class="pilot-panel side-panel"><div class="section-label"><span>01 / ТВОЙ ПИЛОТ</span><span class="tiny-plus">+</span></div><form id="pilot-form"><label for="nickname">Позывной</label><div class="nickname-field"><span>⌁</span><input id="nickname" name="nickname" maxlength="20" value="Pilot_01" autocomplete="nickname" required aria-label="Позывной" /><span class="input-mark">↵</span></div><div class="mode-tabs" role="group" aria-label="Режим игры"><button type="button" class="mode-tab active" id="practice-tab" aria-pressed="true">Тренировка</button><button type="button" class="mode-tab" id="online-tab" aria-pressed="false">Онлайн <span>↗</span></button></div><div id="server-field" hidden><label for="endpoint">WebSocket-сервер</label><input id="endpoint" class="endpoint-input" type="url" value="wss://tron.larana.tech/ws" spellcheck="false" /></div><button type="submit" class="join-button" id="join-button">Начать тренировку <span>→</span></button></form><p class="panel-footnote" id="mode-description"><span class="status-dot"></span> Ты + 3 бота. Полигон для твоих рефлексов.</p></section>
+            <section class="players-panel side-panel"><div class="section-label"><span>02 / ПИЛОТЫ АРЕНЫ</span><span id="player-count" class="count-badge">00</span></div><div class="players-table-head"><span>ПИЛОТ</span><span>ПОБЕДЫ</span></div><div id="players-list" class="players-list"><div class="empty-players">Арена ждёт своих пилотов.<br><span>Первый шаг за тобой.</span></div></div><div class="session-stats"><div><span>РАУНД</span><strong id="round-number">—</strong></div><div><span>В ИГРЕ</span><strong id="alive-count">—</strong></div><div><span>ВРЕМЯ</span><strong id="round-time">00:00</strong></div></div></section>
+            <section class="tip-panel"><span class="tip-symbol">↳</span><div><div class="section-label">ДЕРЖИ ДИСТАНЦИЮ</div><p>Твой след — твоя ловушка.<br>Резкий поворот решает всё.</p></div><span class="tip-number">/ 01</span></section>
+          </aside>
+        </div>
+
+        <div class="touch-controls" aria-label="Сенсорное управление"><button data-direction="l" aria-label="Влево">←</button><div><button data-direction="u" aria-label="Вверх">↑</button><button data-direction="d" aria-label="Вниз">↓</button></div><button data-direction="r" aria-label="Вправо">→</button></div>
+        <div class="bottom-strip"><span><span class="orange-dot"></span> NO BRAKES. NO SECOND CHANCES.</span><span>СВЕТОВОЙ СЛЕД ОСТАЁТСЯ. ЛЕГЕНДЫ — ТОЖЕ.</span></div>
+      </main>
+      <footer><span>HOLY TRON <span class="footer-divider">/</span> MADE FOR THE GRID</span><span>Built with TypeScript <span class="footer-spark">✳</span> Powered by you</span></footer>
+    </div>
+    <dialog id="help-dialog"><button id="close-help" class="close-help" aria-label="Закрыть">×</button><div class="eyebrow">SURVIVAL PROTOCOL</div><h2>Здесь нет тормозов.</h2><p>В 3D потяни по арене мышью или пальцем, чтобы повернуть камеру. Кнопки 2D / 3D переключают вид без остановки игры.</p><p>Твой световой цикл движется сам. Меняй направление стрелками, WASD или кнопками под ареной на телефоне.</p><ol><li>Не касайся границ арены.</li><li>Обходи свой и чужие световые следы.</li><li>Разворот на 180° невозможен.</li><li>Останься последним и забери победу.</li></ol><p>В тренировке — три бота и новый раунд по кнопке. Онлайн-раунды запускает сервер, когда подключены хотя бы два пилота.</p><button id="help-play" class="primary-button">Понятно, погнали <span>↗</span></button></dialog>
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script src="/main.ts" type="module"></script>
+  </body>
 </html>

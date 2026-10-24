@@ -1,19 +1,28 @@
 {
-	"name": "tron-client",
-	"version": "1.0.0",
-	"description": "",
-	"scripts": {
-		"dev": "vite"
-	},
-	"keywords": [
-		"tron",
-		"larana.tech",
-		"holyjs"
-	],
-	"author": "Evgenii Kucheriavyi",
-	"license": "MIT",
-	"devDependencies": {
-		"typescript": "^7.0.2",
-		"vite": "^8.3.4"
-	}
+  "name": "tron-client",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "keywords": [
+    "tron",
+    "larana.tech",
+    "holyjs"
+  ],
+  "author": "Evgenii Kucheriavyi",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  },
+  "type": "module",
+  "dependencies": {
+    "three": "^0.186.1"
+  }
 }

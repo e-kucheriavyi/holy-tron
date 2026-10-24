@@ -1,4 +1,4 @@
-import { Connection } from "./network.ts"
+import type { Connection } from "./network.ts"
 import {
 	ActionType,
 	Direction,
@@ -251,12 +251,13 @@ export const createMockConnection = (): Connection => {
 	let callback: Function | null = null
 	const nextMessage = mockTickStream()
 
-	setInterval(() => {
+	const timer = setInterval(() => {
 		const msg = nextMessage()
 		callback && callback(msg)
 	}, 100)
 
 	return {
+		close: () => clearInterval(timer),
 		send: (msg) => {
 			console.log("[MOCK]", msg)
 		},
