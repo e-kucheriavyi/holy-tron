@@ -1,4 +1,4 @@
-export const CELLS_PER_PLAYER = 10
+export const CELLS_PER_PLAYER = 6
 
 export const PHASE_INTERVAL = 5000
 
