@@ -14,7 +14,7 @@ window.addEventListener("resize", resize)
 
 const isMock = false
 
-const endpoint = "ws://localhost:2026"
+const endpoint = "wss://tron.larana.tech/ws"
 const nickname = "hlebaev"
 const mode: Mode = "full"
 

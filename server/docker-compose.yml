@@ -1,7 +1,7 @@
 services:
   tron:
     build: .
-    container_name: tron
+    container_name: holytron
     restart: unless-stopped
     ports:
       - "127.0.0.1:2026:2026"
