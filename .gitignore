@@ -1,0 +1,8 @@
+node_modules
+dist
+.comments
+*.local
+.vite-inspect
+.remote-assets
+components.d.ts
+pnpm-lock.yaml

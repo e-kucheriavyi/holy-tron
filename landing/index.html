@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>TRON | larana.tech</title>
+		<link rel="stylesheet" href="/style.css" />
+		<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	</head>
+	<body>
+		<main class="main">
+			<h1>TRON | larana.tech</h1>
+			<a href="/play" class="playLink">Play</a>
+
+			<h2>Rules</h2>
+
+			<ul>
+				<li>Player can move left, right, up or down.</li>
+				<li>Player moves every tick.</li>
+				<li>Player leaves trace behind.</li>
+				<li>Colliding with any trace kills player.</li>
+				<li>Leaving boundaries of a map kills player.</li>
+				<li>Last alive player wins.</li>
+			</ul>
+
+			<h2>Network</h2>
+
+			<ol>
+				<li>Connect to WebSocket (endpoint is below).</li>
+				<li>Send your nickname (if phase is <code>PENDING</code>).</li>
+				<li>Wait for game to start.</li>
+				<li>Control your player by sending single character: <code>"l" | "r" | "u" | "d"</code> (see <code>Direction</code> in types below).</li>
+			</ol>
+
+			<h3>WebSocket endpoint</h3>
+
+			<p>
+				<code>wss://tron.larana.tech/ws</code>
+			</p>
+
+			<h3>Types</h3>
+			<code>
+<pre>
+<span class="k">const</span> Direction = {
+	<span class="f">LEFT</span>:  <span class="l">"l"</span>,
+	<span class="f">RIGHT</span>: <span class="l">"r"</span>,
+	<span class="f">UP</span>:    <span class="l">"u"</span>,
+	<span class="f">DOWN</span>:  <span class="l">"d"</span>,
+} <span class="k">as const</span>
+
+<span class="k">type</span> <span class="t">Direction</span> = (<span class="k">typeof</span> Direction)[<span class="k">keyof typeof</span> Direction]
+
+<span class="k">const</span> Phase = {
+	<span class="f">PENDING</span>: <span class="l">"p"</span>,
+	<span class="f">READY</span>:   <span class="l">"r"</span>,
+	<span class="f">GAME</span>:    <span class="l">"g"</span>,
+	<span class="f">WINNER</span>:  <span class="l">"w"</span>,
+	<span class="f">END</span>:     <span class="l">"e"</span>,
+} <span class="k">as const</span>
+
+<span class="k">type</span> <span class="t">Phase</span> = (<span class="k">typeof</span> Phase)[<span class="k">keyof typeof</span> Phase]
+
+<span class="k">type</span> <span class="t">Player</span> = {
+	<span class="f">id</span>:        <span class="t">number</span>
+	<span class="f">x</span>:         <span class="t">number</span>
+	<span class="f">y</span>:         <span class="t">number</span>
+	<span class="f">nickname</span>:  <span class="t">string</span>
+	<span class="f">color</span>:     <span class="t">string</span>
+	<span class="f">direction</span>: <span class="t">Direction</span>
+	<span class="f">isAlive</span>:   <span class="t">boolean</span>
+	<span class="f">connected</span>: <span class="t">boolean</span>
+	<span class="f">trace</span>:     <span class="t">number</span>[]
+	<span class="f">games</span>:     <span class="t">number</span>
+	<span class="f">wins</span>:      <span class="t">number</span>
+}
+
+<span class="k">type</span> <span class="t">ServerMessage</span> = {
+	<span class="c">/* timestamp */</span>
+	<span class="f">t</span>: <span class="t">number</span>
+	<span class="c">/* tick number */</span>
+	<span class="f">i</span>: <span class="t">number</span>
+	<span class="c">/* list of actions */</span>
+	<span class="f">a</span>: <span class="t">Action</span>[]
+}
+
+<span class="k">type</span> <span class="t">WelcomeData</span> = {
+	<span class="c">// player id</span>
+	<span class="f">i</span>: <span class="t">number</span>
+	<span class="c">// game id</span>
+	<span class="f">g</span>: <span class="t">number</span>
+	<span class="c">// tick interval</span>
+	<span class="f">s</span>: <span class="t">number</span>
+	<span class="c">// cells per player: arenaSize = a * players.length</span>
+	<span class="f">a</span>: <span class="t">number</span>
+	<span class="f">p</span>: <span class="t">PlayerConnectedData</span>[]
+}
+
+<span class="k">type</span> <span class="t">TurnData</span> = {
+	<span class="c">// player id</span>
+	<span class="f">i</span>: <span class="t">number</span>
+	<span class="c">// new direction</span>
+	<span class="f">d</span>: <span class="t">Direction</span>
+}
+
+<span class="k">type</span> <span class="t">PhaseData</span> = {
+	<span class="f">p</span>: <span class="t">Phase</span>
+	<span class="c">// next phase interval</span>
+	<span class="f">n</span>: <span class="t">number</span>
+	<span class="c">// winner id</span>
+	<span class="f">w</span>: <span class="t">number</span>
+}
+
+<span class="k">type</span> <span class="t">PlayerConnectedData</span> = {
+	<span class="c">// id</span>
+	<span class="f">i</span>: <span class="t">number</span>
+	<span class="c">// nickname</span>
+	<span class="f">n</span>: <span class="t">string</span>
+	<span class="c">// color</span>
+	<span class="f">c</span>: <span class="t">string</span>
+	<span class="c">// direction</span>
+	<span class="f">d</span>: <span class="t">Direction</span>
+	<span class="f">x</span>: <span class="t">number</span>
+	<span class="f">y</span>: <span class="t">number</span>
+	<span class="c">// games played</span>
+	<span class="f">g</span>: <span class="t">number</span>
+	<span class="c">// wins</span>
+	<span class="f">w</span>: <span class="t">number</span>
+}
+
+<span class="k">const</span> ActionType = {
+	<span class="f">WELCOME</span>:          <span class="l">"w"</span>,
+	<span class="f">PLAYER_CONNECTED</span>: <span class="l">"p"</span>,
+	<span class="f">PLAYER_DIED</span>:      <span class="l">"d"</span>,
+	<span class="f">PLAYER_TURNED</span>:    <span class="l">"t"</span>,
+	<span class="f">GAME_PHASE</span>:       <span class="l">"h"</span>,
+	<span class="f">DATA</span>:             <span class="l">"r"</span>,
+} <span class="k">as const</span>
+
+<span class="k">type</span> <span class="t">ActionType</span> = (<span class="k">typeof</span> ActionType)[<span class="k">keyof typeof</span> ActionType]
+
+<span class="k">type</span> <span class="t">Action</span> = {
+	<span class="f">t</span>: <span class="t">ActionType</span>
+	<span class="c">// data</span>
+	<span class="f">d</span>: <span class="t">unknown</span>
+}
+</pre>
+			</code>
+
+			<h2>Links</h2>
+			<ul>
+				<li><a href="https://github.com/e-kucheriavyi/tron">GitHub</a></li>
+			</ul>
+		</main>
+	</body>
+</html>

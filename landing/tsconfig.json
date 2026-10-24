@@ -1,0 +1,8 @@
+{
+	"compilerOptions": {
+		"paths": {
+			"@laranatech/tron-client": ["../client/src"],
+			"@laranatech/tron-client/*": ["../client/src/*"],
+		}
+	}
+}

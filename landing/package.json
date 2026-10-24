@@ -1,0 +1,17 @@
+{
+	"name": "tron-landing",
+	"version": "1.0.0",
+	"description": "",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build"
+	},
+	"keywords": ["tron", "larana.tech", "holyjs"],
+	"author": "Evgenii Kucheriavyi",
+	"license": "MIT",
+	"type": "module",
+	"devDependencies": {
+		"typescript": "^7.0.2",
+		"vite": "^8.3.4"
+	}
+}

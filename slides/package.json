@@ -1,0 +1,21 @@
+{
+	"name": "tron-slides",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"build": "slidev build",
+		"dev": "slidev --open",
+		"export": "slidev export"
+	},
+	"dependencies": {
+		"@slidev/cli": "^52.19.1",
+		"@slidev/theme-default": "latest",
+		"slidev-addon-qrcode": "^1.0.2",
+		"vue": "^3.5.33"
+	},
+	"slidev": {
+		"addons": [
+			"slidev-addon-qrcode"
+		]
+	}
+}
