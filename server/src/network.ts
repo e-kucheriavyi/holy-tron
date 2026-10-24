@@ -108,9 +108,13 @@ export const createServer = (game: Game) => {
 				if (game.state.phase === Phase.PENDING) {
 					const [mode, nickname] = msg.split(":")
 					id = game.connect(server, ws, nickname)
-					clientsById[id] = {
-						ws,
-						mode: mode === "f" ? "full" : "ticks",
+					if (id === -1) {
+						spectators.push(ws)
+					} else {
+						clientsById[id] = {
+							ws,
+							mode: mode === "f" ? "full" : "ticks",
+						}
 					}
 					return
 				}
