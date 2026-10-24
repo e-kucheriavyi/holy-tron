@@ -13,10 +13,11 @@ export const createPracticeConnection = (nickname: string, round = 1, wins = 0):
     direction, x, y, trace: [x, y], connected: true, isAlive: true, games: round - 1, wins: i === 0 ? wins : 0,
   }))
   const state: State = { nickname, connected: true, gameId: round, playerId: 0, tickNumber: 0,
-    tickInterval: 115, phase: Phase.READY, phaseInterval: 3000, winnerId: -1, arenaSize: size, players }
+    tickInterval: 150, phase: Phase.READY, phaseInterval: 3000, winnerId: -1, arenaSize: size, players }
   let callback: ((message: ServerMessage) => void) | undefined
   let queued: Direction | undefined
   let closed = false
+  let paused = false
   const occupied = new Set(players.map(p => `${p.x},${p.y}`))
   const safe = (x: number, y: number) => x >= 0 && y >= 0 && x <= size && y <= size && !occupied.has(`${x},${y}`)
   const openSpace = (x: number, y: number) => {
@@ -33,7 +34,7 @@ export const createPracticeConnection = (nickname: string, round = 1, wins = 0):
   }
   const emit = () => callback?.({ i: state.tickNumber, t: Date.now(), a: [{ t: ActionType.DATA, d: structuredClone(state) }] })
   const timer = setInterval(() => {
-    if (closed || !callback) return
+    if (closed || paused || !callback) return
     state.tickNumber++
     if (state.phase === Phase.READY) {
       state.phaseInterval = Math.max(0, state.phaseInterval - state.tickInterval)
@@ -76,6 +77,7 @@ export const createPracticeConnection = (nickname: string, round = 1, wins = 0):
     emit()
   }, state.tickInterval)
   return {
+    pause: value => { paused = value },
     send: (message) => {
       if (Object.values(Direction).includes(message as Direction) && state.phase === Phase.GAME) queued = message as Direction
     },

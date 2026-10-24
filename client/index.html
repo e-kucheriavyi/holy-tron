@@ -11,22 +11,28 @@
   <body>
     <div class="app-shell">
       <header class="header">
-        <a class="brand" href="./" aria-label="Holy Tron, главная"><span class="brand-icon">⌁</span><span>HOLY<span class="brand-light">TRON</span><small>LIGHT CYCLE ARENA</small></span></a>
-        <nav class="top-nav" aria-label="Навигация"><span class="nav-active">Арена</span><button id="help-button" class="nav-button">Как играть <span>↗</span></button></nav>
+        <a class="brand" href="./" aria-label="Holy Tron, главная"><span class="brand-icon">⌁</span><span>HOLY<span class="brand-light">TRON</span><small>LIGHT CYCLE / REBORN</small></span></a>
+        <nav class="top-nav" aria-label="Навигация"><span class="nav-active">Арена</span><button id="garage-button" class="nav-button garage-nav">Гараж <span class="garage-coins">◈ <b id="garage-header-balance">300</b></span></button><button id="help-button" class="nav-button">Как играть <span>↗</span></button></nav>
         <div class="header-tag"><span class="status-dot"></span> SYSTEM ONLINE <span class="version">v.01</span></div>
       </header>
 
       <main>
         <section class="intro">
-          <div><div class="eyebrow"><span></span> THE GRID IS WAITING</div><h1>Оставь свой <em>след.</em></h1><p>Скорость. Стратегия. Один выживший.</p></div>
-          <div class="intro-coordinate">50° 06′ N &nbsp; / &nbsp; 08° 40′ E<br><span>HOLY TRON / DIGITAL FRONTIER</span></div>
+          <div><div class="eyebrow"><span></span> THE GRID IS WAITING</div><h1>Войди в <em>систему.</em></h1><p>Скорость. Стратегия. Один выживший.</p></div>
+          <div class="intro-coordinate">3D LIGHT CYCLE COMBAT &nbsp; / &nbsp; VOL. 02<br><span>HOLY TRON / DIGITAL FRONTIER</span></div>
         </section>
 
         <div class="game-layout">
           <section class="arena-panel" aria-label="Игровая арена">
             <div class="panel-bar"><div class="panel-title"><span class="small-cross">✳</span> THE ARENA <span class="room-chip" id="room-chip">TRAINING</span></div><div class="arena-status"><span class="status-dot" id="arena-dot"></span><span id="arena-status">ГОТОВА К ЗАПУСКУ</span></div></div>
             <div class="arena-surface" id="arena-surface">
-              <canvas id="scene" hidden aria-label="Трёхмерная арена TRON. Потяни мышью, чтобы повернуть камеру."></canvas><canvas id="canvas" aria-label="Поле TRON. Управление стрелками или WASD."></canvas>
+              <canvas id="scene" hidden aria-label="Трёхмерная гонка TRON. Камера следует за лягушкой."></canvas><canvas id="canvas" aria-label="Поле TRON. Управление стрелками или WASD."></canvas>
+              <div class="race-hud" id="race-hud" hidden>
+                <div class="hud-top"><span class="hud-live"><i></i> LIVE TELEMETRY</span><span id="hud-camera">CHASE CAM</span></div>
+                <div class="hud-crosshair">⌖</div>
+                <div class="hud-telemetry"><div class="hud-speed"><strong id="hud-speed">0</strong><span>КМ/Ч</span></div><div class="speed-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="hud-metrics"><span>ДИСТАНЦИЯ <b id="hud-distance">0 м</b></span><span>ВЫЖИВАНИЕ <b id="hud-survival">0.0 с</b></span></div><div class="hud-hint" id="hud-hint">A / D — ПОВОРОТ · C — КАМЕРА</div></div>
+                <div class="hud-map"><span>TACTICAL SCAN <b id="hud-alive">4 / 4</b></span><canvas id="minimap" aria-label="Миникарта с положениями пилотов и световыми следами"></canvas><small>▲ ТВОЯ ЛЯГУШКА</small></div>
+              </div>
               <div class="arena-corner corner-tl"></div><div class="arena-corner corner-tr"></div><div class="arena-corner corner-bl"></div><div class="arena-corner corner-br"></div>
               <div class="arena-watermark">GRID // <span id="grid-size">51 × 51</span></div>
               <div class="arena-overlay" id="arena-overlay">
@@ -34,12 +40,13 @@
               </div>
               <div class="countdown" id="countdown" hidden aria-live="polite"></div>
             </div>
-            <div class="arena-bottom"><span><span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span><span class="or">/</span><span class="keycap">↑</span><span class="keycap">←</span><span class="keycap">↓</span><span class="keycap">→</span><span class="control-caption">управление</span></span><div class="arena-actions"><div class="view-toggle" role="group" aria-label="Вид арены"><button id="view-2d" aria-pressed="true">2D</button><button id="view-3d" aria-pressed="false" disabled>3D</button></div><button class="text-button" id="sound-button" aria-pressed="false">♫ <span>Звук выкл.</span></button></div></div>
+            <div class="arena-bottom"><span><span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span><span class="or">/</span><span class="keycap">↑</span><span class="keycap">←</span><span class="keycap">↓</span><span class="keycap">→</span><span class="control-caption">управление</span></span><div class="arena-actions"><button id="camera-button" class="text-button" title="Переключить камеру (C)">◉ Погоня</button><button id="fullscreen-button" class="text-button" aria-label="Полный экран">⛶</button><div class="view-toggle" role="group" aria-label="Вид арены"><button id="view-2d" aria-pressed="true">2D</button><button id="view-3d" aria-pressed="false" disabled>3D</button></div><button class="text-button" id="sound-button" aria-pressed="false">♫ <span>Звук выкл.</span></button></div></div>
           </section>
 
           <aside class="sidebar">
             <section class="pilot-panel side-panel"><div class="section-label"><span>01 / ТВОЙ ПИЛОТ</span><span class="tiny-plus">+</span></div><form id="pilot-form"><label for="nickname">Позывной</label><div class="nickname-field"><span>⌁</span><input id="nickname" name="nickname" maxlength="20" value="Pilot_01" autocomplete="nickname" required aria-label="Позывной" /><span class="input-mark">↵</span></div><div class="mode-tabs" role="group" aria-label="Режим игры"><button type="button" class="mode-tab active" id="practice-tab" aria-pressed="true">Тренировка</button><button type="button" class="mode-tab" id="online-tab" aria-pressed="false">Онлайн <span>↗</span></button></div><div id="server-field" hidden><label for="endpoint">WebSocket-сервер</label><input id="endpoint" class="endpoint-input" type="url" value="wss://tron.larana.tech/ws" spellcheck="false" /></div><button type="submit" class="join-button" id="join-button">Начать тренировку <span>→</span></button></form><p class="panel-footnote" id="mode-description"><span class="status-dot"></span> Ты + 3 бота. Полигон для твоих рефлексов.</p></section>
             <section class="players-panel side-panel"><div class="section-label"><span>02 / ПИЛОТЫ АРЕНЫ</span><span id="player-count" class="count-badge">00</span></div><div class="players-table-head"><span>ПИЛОТ</span><span>ПОБЕДЫ</span></div><div id="players-list" class="players-list"><div class="empty-players">Арена ждёт своих пилотов.<br><span>Первый шаг за тобой.</span></div></div><div class="session-stats"><div><span>РАУНД</span><strong id="round-number">—</strong></div><div><span>В ИГРЕ</span><strong id="alive-count">—</strong></div><div><span>ВРЕМЯ</span><strong id="round-time">00:00</strong></div></div></section>
+            <section class="career-panel side-panel"><div class="section-label"><span>03 / КАРЬЕРА ПИЛОТА</span><span class="career-local">LOCAL</span></div><div class="career-primary"><strong id="career-winrate">0<span>%</span></strong><div>ДОЛЯ ПОБЕД<small id="career-summary">0 побед · 0 заездов</small></div></div><div class="career-grid"><div><span>ЛУЧШЕЕ ВЫЖИВАНИЕ</span><b id="career-best">—</b></div><div><span>ОБЩИЙ ПРОБЕГ</span><b id="career-distance">0 м</b></div><div><span>СЕРИЯ ПОБЕД</span><b id="career-streak">0</b></div><div><span>ПОВОРОТЫ</span><b id="career-turns">0</b></div></div><div class="history-title">ПОСЛЕДНИЕ ЗАЕЗДЫ <span id="career-mode">ТРЕНИРОВКА</span></div><div id="race-history" class="race-history"><p>Здесь появится твоя история.</p></div><p class="career-note">Сохраняется для позывного в этом браузере.</p></section>
             <section class="tip-panel"><span class="tip-symbol">↳</span><div><div class="section-label">ДЕРЖИ ДИСТАНЦИЮ</div><p>Твой след — твоя ловушка.<br>Резкий поворот решает всё.</p></div><span class="tip-number">/ 01</span></section>
           </aside>
         </div>
@@ -49,7 +56,13 @@
       </main>
       <footer><span>HOLY TRON <span class="footer-divider">/</span> MADE FOR THE GRID</span><span>Built with TypeScript <span class="footer-spark">✳</span> Powered by you</span></footer>
     </div>
-    <dialog id="help-dialog"><button id="close-help" class="close-help" aria-label="Закрыть">×</button><div class="eyebrow">SURVIVAL PROTOCOL</div><h2>Здесь нет тормозов.</h2><p>В 3D потяни по арене мышью или пальцем, чтобы повернуть камеру. Кнопки 2D / 3D переключают вид без остановки игры.</p><p>Твой световой цикл движется сам. Меняй направление стрелками, WASD или кнопками под ареной на телефоне.</p><ol><li>Не касайся границ арены.</li><li>Обходи свой и чужие световые следы.</li><li>Разворот на 180° невозможен.</li><li>Останься последним и забери победу.</li></ol><p>В тренировке — три бота и новый раунд по кнопке. Онлайн-раунды запускает сервер, когда подключены хотя бы два пилота.</p><button id="help-play" class="primary-button">Понятно, погнали <span>↗</span></button></dialog>
+    <dialog id="help-dialog"><button id="close-help" class="close-help" aria-label="Закрыть">×</button><div class="eyebrow">SURVIVAL PROTOCOL</div><h2>Здесь нет тормозов.</h2><p>В 3D камера следует за лягушкой. A / D или ← / → поворачивают относительно движения. C переключает камеры: погоня, глаза, обзор. В обзоре камеру можно вращать мышью. В 2D стрелки и WASD задают направление на карте.</p><p>Лягушка движется автоматически. Стены арены и все световые следы опасны. После гибели камера переключается на выжившего пилота. Досрочный выход из начавшегося заезда считается сходом.</p><ol><li>Не касайся границ арены.</li><li>Обходи свой и чужие световые следы.</li><li>Разворот на 180° невозможен.</li><li>Останься последним и забери победу.</li></ol><p>В тренировке — три бота и новый раунд по кнопке. Онлайн-раунды запускает сервер, когда подключены хотя бы два пилота.</p><button id="help-play" class="primary-button">Понятно, погнали <span>↗</span></button></dialog>
+    <dialog id="garage-dialog" class="garage-dialog">
+      <button id="garage-close" class="close-help" aria-label="Закрыть гараж">×</button>
+      <div class="garage-heading"><div><div class="eyebrow">PILOT CUSTOMS / <span id="garage-pilot">Pilot</span></div><h2>Твоя лягушка. <em>Твой стиль.</em></h2><p>Только косметика. Все лягушки одинаково быстрые.</p></div><div class="garage-wallet"><small>ТВОЙ БАЛАНС</small><strong>◈ <span id="garage-balance">300</span></strong></div></div>
+      <section class="case-section"><div class="case-heading"><div><span class="case-badge">GRID COLLECTION / 01</span><h3>Кейс «Неоновая ночь»</h3></div><span class="case-odds">70% серийный · 25% редкий · 5% легендарный</span></div><div class="case-viewport" id="case-viewport"><div class="case-pointer"></div><div class="case-strip" id="case-strip"><div class="case-idle"><span>◈</span><strong>НЕОНОВАЯ НОЧЬ</strong><small>8 СКИНОВ · ОДИН КЕЙС · ТВОЙ СЛЕД</small></div></div></div><div class="case-footer"><div id="case-result" class="case-result" role="status">Новый скин или +60 ◈ за дубликат.</div><button id="open-case" class="primary-button">Открыть кейс · 0 ◈</button></div><div class="case-rewards">За заезд: победа +100 ◈ · столкновение +40 ◈ · ничья +60 ◈ · сход +0. Стартовый запас — 300 ◈.</div></section>
+      <div class="inventory-heading"><h3>Твой гараж <span id="garage-owned">1 / 9</span></h3><span>УСТАНОВЛЕН: <b id="garage-equipped">Factory Mint</b></span></div><div id="garage-inventory" class="garage-inventory"></div><p class="garage-local-note">Инвентарь и валюта сохраняются для позывного в этом браузере. Скин меняет окрас лягушки; цвет светового следа онлайн назначает сервер.</p>
+    </dialog>
     <div class="toast" id="toast" role="status" hidden></div>
     <script src="/main.ts" type="module"></script>
   </body>

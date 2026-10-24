@@ -1,7 +1,10 @@
 import './style.css'
+import { createGarageUI } from './src/garage-ui.ts'
 import { draw, resize, handleInputs, createStore, createConnection, Phase, type State, type Direction } from './src/index.ts'
 import { createPracticeConnection } from './src/practice.ts'
-import type { Arena3D } from './src/scene.ts'
+import { createStatistics, readCareer, careerKey } from './src/statistics.ts'
+import { drawMinimap } from './src/minimap.ts'
+import type { Arena3D, CameraMode } from './src/scene.ts'
 import type { Connection, ConnectionStatus } from './src/network.ts'
 
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!
@@ -10,16 +13,55 @@ const overlay = $('#arena-overlay'), countdown = $('#countdown')
 const startButton = $<HTMLButtonElement>('#start-button'), joinButton = $<HTMLButtonElement>('#join-button')
 const help = $<HTMLDialogElement>('#help-dialog')
 let scene3D: Arena3D | undefined
+let activePilot = ''
+let view3D = false, cameraMode: CameraMode = 'chase', lastTurnTick = -1
+const cameraModes: CameraMode[] = ['chase', 'cockpit', 'overview']
 const renderArena = (next: State | null) => { if (!$('#canvas').hidden) draw(next); scene3D?.update(next) }
 let mode: 'practice' | 'online' = 'practice'
 let connection: Connection | undefined, state: State | null = null
 let connected = false, round = 0, wins = 0, roundStarted = 0, elapsed = 0, version = 0
+let roundStartTick = 0
 let sound = false, audio: AudioContext | undefined
 let toastTimer: ReturnType<typeof setTimeout>, previousPhase: string | undefined, wasAlive = true, lastPlayers = ''
 try {
   nickname.value = localStorage.getItem('tron-nickname') || 'Pilot_01'
   endpoint.value = localStorage.getItem('tron-endpoint') || endpoint.value
 } catch { /* Storage may be unavailable in a private browsing context. */ }
+const garageUI = createGarageUI(() => activePilot || nickname.value, skin => scene3D?.setSkin(skin))
+const loadStatistics = () => {
+  const racePilot = nickname.value
+  const key = careerKey(racePilot, mode)
+  let raw: string | null = null
+  try { raw = localStorage.getItem(key) } catch {}
+  return createStatistics(readCareer(raw), (career, record) => { try { localStorage.setItem(key, JSON.stringify(career)) } catch {}; garageUI.reward(record, racePilot) })
+}
+let statistics = loadStatistics(), historySignature = ''
+const distanceText = (metres: number) => metres >= 1000 ? `${(metres / 1000).toFixed(2)} км` : `${Math.round(metres)} м`
+const secondsText = (seconds: number) => `${seconds.toFixed(1)} с`
+const plural = (n: number, words: string[]) => words[n % 100 >= 11 && n % 100 <= 14 ? 2 : n % 10 === 1 ? 0 : n % 10 >= 2 && n % 10 <= 4 ? 1 : 2]
+const updateCareer = () => {
+  const career = statistics.career
+  $('#career-winrate').replaceChildren(document.createTextNode(String(career.races ? Math.round(career.wins / career.races * 100) : 0)), Object.assign(document.createElement('span'), { textContent: '%' }))
+  $('#career-summary').textContent = `${career.wins} ${plural(career.wins, ['победа', 'победы', 'побед'])} · ${career.races} ${plural(career.races, ['заезд', 'заезда', 'заездов'])}`
+  $('#career-best').textContent = career.bestSeconds ? secondsText(career.bestSeconds) : '—'
+  $('#career-distance').textContent = distanceText(career.distance)
+  $('#career-streak').textContent = `${career.streak} / рекорд ${career.bestStreak}`
+  $('#career-turns').textContent = String(career.turns)
+  $('#career-mode').textContent = mode === 'practice' ? 'ТРЕНИРОВКА' : 'ОНЛАЙН'
+  const signature = JSON.stringify(career.history)
+  if (signature === historySignature) return
+  historySignature = signature
+  const list = $('#race-history'); list.replaceChildren()
+  if (!career.history.length) { const empty = document.createElement('p'); empty.textContent = 'Первый заезд — начало истории.'; list.append(empty) }
+  for (const race of career.history) {
+    const row = document.createElement('div'); row.className = 'history-row'
+    const result = document.createElement('span'); result.className = `history-result ${race.result}`
+    result.textContent = { win: 'ПОБЕДА', loss: 'РАЗБИТ', draw: 'НИЧЬЯ', quit: 'СХОД' }[race.result]
+    const info = document.createElement('span'); info.className = 'history-info'; info.textContent = `${race.place ? `#${race.place} · ` : ''}${secondsText(race.seconds)} · ${distanceText(race.distance)}`
+    const time = document.createElement('time'); time.textContent = new Date(race.at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }); time.dateTime = new Date(race.at).toISOString()
+    row.append(result, info, time); list.append(row)
+  }
+}
 const notify = (message: string) => {
   clearTimeout(toastTimer)
   const toast = $('#toast'); toast.textContent = message; toast.hidden = false
@@ -47,8 +89,8 @@ const setBusy = (busy: boolean) => {
   joinButton.textContent = busy ? 'Отменить подключение ×' : connected && mode === 'online' ? 'Выйти из арены ×' : mode === 'practice' ? 'Начать тренировку →' : 'Подключиться →'
 }
 const stop = () => {
-  version++; connection?.close(); connection = undefined; connected = false; state = null; previousPhase = undefined
-  roundStarted = 0; elapsed = 0; countdown.hidden = true; setBusy(false)
+  statistics.abandon(); version++; connection?.close(); connection = undefined; connected = false; state = null; previousPhase = undefined
+  activePilot = ''; roundStarted = 0; elapsed = 0; countdown.hidden = true; setBusy(false)
 }
 const updateStats = () => {
   const players = state?.players.filter(p => p.connected) ?? []
@@ -75,6 +117,14 @@ const updateStats = () => {
   $('#grid-size').textContent = state ? `${state.arenaSize + 1} × ${state.arenaSize + 1}` : '51 × 51'
   const seconds = Math.floor(elapsed / 1000)
   $('#round-time').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+  const me = state?.players.find(p => p.id === state!.playerId)
+  $('#race-hud').hidden = !state || !overlay.hidden
+  $('#hud-speed').textContent = String(state?.phase === Phase.GAME && me?.isAlive ? Math.round(10800 / state.tickInterval) : 0)
+  $('#hud-distance').textContent = distanceText(statistics.metrics.distance)
+  $('#hud-survival').textContent = secondsText(statistics.metrics.seconds)
+  $('#hud-alive').textContent = state ? `${players.filter(p => p.isAlive).length} / ${players.length}` : '—'
+  drawMinimap($<HTMLCanvasElement>('#minimap'), state)
+  updateCareer()
 }
 const idle = () => {
   stop(); setStatus('ГОТОВА К ЗАПУСКУ')
@@ -85,20 +135,21 @@ const idle = () => {
 }
 const render = () => {
   if (!state) return
+  statistics.observe(state)
   const me = state.players.find(p => p.id === state!.playerId)
   if (state.phase !== previousPhase) {
-    if (state.phase === Phase.GAME) { roundStarted = performance.now(); beep(680, .14) }
+    if (state.phase === Phase.GAME) { roundStarted = performance.now(); roundStartTick = state.tickNumber; beep(680, .14) }
     if (state.phase === Phase.READY || state.phase === Phase.PENDING) { elapsed = 0; roundStarted = 0 }
     if (state.phase === Phase.WINNER || state.phase === Phase.END) {
-      if (roundStarted) elapsed = performance.now() - roundStarted
+      if (roundStarted) elapsed = Math.max(0, state.tickNumber - roundStartTick) * state.tickInterval
       roundStarted = 0
       if (mode === 'practice') wins = me?.wins ?? wins
       beep(state.winnerId === state.playerId ? 880 : 180, .25)
     }
     previousPhase = state.phase
   }
-  if (state.phase === Phase.GAME && roundStarted) elapsed = performance.now() - roundStarted
-  if (wasAlive && me && !me.isAlive) { notify(mode === 'practice' ? 'Твой цикл разбит. Наблюдай за финалом или начни новую тренировку.' : 'Твой цикл разбит. Наблюдай за финалом — следующий раунд начнётся автоматически.'); beep(130, .2) }
+  if (state.phase === Phase.GAME && roundStarted) elapsed = Math.max(0, state.tickNumber - roundStartTick) * state.tickInterval
+  if (wasAlive && me && !me.isAlive) { notify(mode === 'practice' ? 'Лягушка выбыла. Наблюдай за финалом или начни новую тренировку.' : 'Лягушка выбыла. Наблюдай за финалом — следующий раунд начнётся автоматически.'); beep(130, .2) }
   wasAlive = me?.isAlive ?? true
   overlay.hidden = true; countdown.hidden = state.phase !== Phase.READY
   if (state.phase === Phase.READY) {
@@ -113,7 +164,7 @@ const render = () => {
     setStatus('РАУНД ЗАВЕРШЁН', '#ffa971')
     setOverlay(winner?.id === state.playerId ? 'VICTORY / GRID SECURED' : 'ROUND COMPLETE',
       winner ? winner.id === state.playerId ? 'Арена твоя.' : `${winner.nickname} побеждает.` : 'Ничья. Яркий финал.',
-      mode === 'practice' ? 'Каждый поворот — новый шанс. Возвращайся на сетку и забери следующий раунд.' : `Следующий раунд запустит сервер. ${Math.ceil(state.phaseInterval / 1000)} сек.`,
+      mode === 'practice' ? `${statistics.metrics.place ? `Место #${statistics.metrics.place}. ` : ''}${secondsText(statistics.metrics.seconds)} в игре · ${distanceText(statistics.metrics.distance)} · ${statistics.metrics.turns} поворотов. Результат сохранён в карьере.` : `Следующий раунд запустит сервер. ${Math.ceil(state.phaseInterval / 1000)} сек.`,
       mode === 'practice' ? 'Ещё один раунд' : 'Выйти из арены', mode === 'practice' ? `ПОБЕД В ЭТОЙ СЕССИИ: ${wins}` : 'ОСТАВАЙСЯ НА СВЯЗИ · СЛЕДУЮЩИЙ РАУНД АВТОМАТИЧЕСКИ')
   }
   renderArena(state); updateStats()
@@ -141,7 +192,7 @@ const start = () => {
       if (location.protocol === 'https:' && url.protocol === 'ws:') { notify('На HTTPS-странице нужен защищённый сервер wss://'); endpoint.focus(); return }
     } catch { notify('Укажи корректный WebSocket-адрес: ws:// или wss://'); endpoint.focus(); return }
   }
-  stop(); wasAlive = true
+  stop(); activePilot = pilot; garageUI.refresh(); wasAlive = true; lastTurnTick = -1; statistics = loadStatistics()
   const session = version, store = createStore(pilot)
   try { localStorage.setItem('tron-nickname', pilot); localStorage.setItem('tron-endpoint', endpoint.value.trim()) } catch {}
   try {
@@ -164,12 +215,21 @@ const setMode = (next: typeof mode) => {
   $('#practice-tab').setAttribute('aria-pressed', String(mode === 'practice')); $('#online-tab').setAttribute('aria-pressed', String(mode === 'online'))
   $('#server-field').hidden = mode !== 'online'; $('#room-chip').textContent = mode === 'practice' ? 'TRAINING' : 'MULTIPLAYER'
   $('#mode-description').textContent = mode === 'practice' ? 'Ты + 3 бота. Полигон для твоих рефлексов.' : 'Нужны минимум два пилота на одном сервере.'
-  idle()
+  idle(); statistics = loadStatistics(); historySignature = ''; updateCareer()
 }
 $('#practice-tab').addEventListener('click', () => setMode('practice')); $('#online-tab').addEventListener('click', () => setMode('online'))
 handleInputs({ send: (direction: Direction) => {
   if (!state || state.phase !== Phase.GAME || !state.players.find(p => p.id === state!.playerId)?.isAlive) return
-  connection?.send(direction); beep(310, .025)
+  let turn = direction
+  if (view3D) {
+    if (direction !== 'l' && direction !== 'r') return
+    if (lastTurnTick === state.tickNumber) return
+    const order: Direction[] = ['u', 'r', 'd', 'l']
+    const current = state.players.find(p => p.id === state!.playerId)!.direction
+    turn = order[(order.indexOf(current) + (direction === 'l' ? 3 : 1)) % 4]
+    lastTurnTick = state.tickNumber
+  }
+  connection?.send(turn); beep(310, .025)
 } })
 $('#sound-button').addEventListener('click', async () => {
   try {
@@ -182,21 +242,27 @@ help.addEventListener('click', event => {
   if (event.target === help) { const rect = help.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) help.close() }
 })
 new ResizeObserver(() => { resize(); draw(state) }).observe($('#arena-surface'))
-window.addEventListener('pagehide', () => connection?.close())
+window.addEventListener('pagehide', () => { statistics.abandon(); connection?.close() })
+for (const modal of [help, $<HTMLDialogElement>('#garage-dialog')]) {
+  modal.addEventListener('toggle', () => { const open = !!document.querySelector('dialog[open]'); connection?.pause?.(open); scene3D?.setActive(view3D && !open) })
+}
 resize(); idle()
 
 const changeView = (next: boolean) => {
   if (next && !scene3D) return
+  view3D = next; document.body.classList.toggle('view-3d', next)
+  $('#camera-button').hidden = !next
+  $('#hud-hint').textContent = next ? 'A / D — ПОВОРОТ · C — КАМЕРА' : 'WASD / СТРЕЛКИ — НАПРАВЛЕНИЕ'
   $('#scene').hidden = !next; $('#canvas').hidden = next
   $('#view-2d').setAttribute('aria-pressed', String(!next)); $('#view-3d').setAttribute('aria-pressed', String(next))
-  scene3D?.setActive(next)
+  scene3D?.setCamera(cameraMode); scene3D?.setActive(next)
   resize(); renderArena(state)
 }
 $('#view-2d').addEventListener('click', () => changeView(false))
 $('#view-3d').addEventListener('click', () => changeView(true))
 import('./src/scene.ts').then(({ createArena3D }) => {
   scene3D = createArena3D($<HTMLCanvasElement>('#scene'))
-  scene3D.update(state)
+  scene3D.setSkin(garageUI.skin); scene3D.update(state)
   $<HTMLButtonElement>('#view-3d').disabled = false
   changeView(true)
 }).catch(() => {
@@ -209,3 +275,22 @@ $('#scene').addEventListener('webglcontextlost', event => {
   scene3D?.dispose(); scene3D = undefined
   notify('Графический контекст потерян. Продолжаем в 2D.')
 })
+
+const changeCamera = () => {
+  cameraMode = cameraModes[(cameraModes.indexOf(cameraMode) + 1) % cameraModes.length]
+  scene3D?.setCamera(cameraMode)
+  $('#camera-button').textContent = { chase: '◉ Погоня', cockpit: '◉ Глаза', overview: '◉ Обзор' }[cameraMode]
+  $('#hud-camera').textContent = { chase: 'CHASE CAM', cockpit: 'FROG EYES', overview: 'TACTICAL CAM' }[cameraMode]
+}
+$('#camera-button').addEventListener('click', changeCamera)
+const toggleFullscreen = async () => {
+  try { if (document.fullscreenElement) await document.exitFullscreen(); else await $('.arena-panel').requestFullscreen() }
+  catch { notify('Полноэкранный режим недоступен в этом браузере.') }
+}
+$('#fullscreen-button').addEventListener('click', toggleFullscreen)
+window.addEventListener('keydown', event => {
+  if ((event.target as HTMLElement).closest('input,textarea,[contenteditable]') || document.querySelector('dialog[open]') || event.repeat) return
+  if (event.code === 'KeyC' && view3D) { event.preventDefault(); changeCamera() }
+  if (event.code === 'KeyF') { event.preventDefault(); void toggleFullscreen() }
+})
+nickname.addEventListener('input', () => { if (!connection) { statistics = loadStatistics(); historySignature = ''; updateCareer(); garageUI.refresh() } })

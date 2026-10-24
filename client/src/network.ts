@@ -5,6 +5,7 @@ export interface Connection {
   send: (message: string) => void
   onMessage: (fn: (message: ServerMessage) => void) => void
   close: () => void
+  pause?: (paused: boolean) => void
 }
 export type ConnectionOptions = {
   endpoint?: string
